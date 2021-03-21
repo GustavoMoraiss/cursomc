@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
 import com.gustavoweb.cursomc.resources.StandardError;
+import com.gustavoweb.cursomc.services.exceptions.DataIntegrityException;
 import com.gustavoweb.cursomc.services.exceptions.ObjectNotFoundException;
 
 @ControllerAdvice
@@ -21,5 +22,16 @@ public class ResourceExcepitionHandler {
 				System.currentTimeMillis());
 		
 		return ResponseEntity.status(HttpStatus.NOT_FOUND).body(err);
+	}
+	
+	
+	@ExceptionHandler(DataIntegrityException.class)
+	public ResponseEntity<StandardError> dataIntegrityNotFound(DataIntegrityException e, HttpServletRequest request) {
+		
+		StandardError err = new StandardError(HttpStatus.BAD_REQUEST.value(), 
+				e.getMessage(), 
+				System.currentTimeMillis());
+		
+		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(err);
 	}
 }
