@@ -1,4 +1,4 @@
-package com.gustavoweb.cursomc.resources;
+package com.gustavoweb.cursomc.resources.exceptions;
 
 import java.io.Serializable;
 
