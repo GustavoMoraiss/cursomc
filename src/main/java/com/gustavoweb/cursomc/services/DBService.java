@@ -32,7 +32,7 @@ import com.gustavoweb.cursomc.repositories.ProdutoRepository;
 
 @Service
 public class DBService {
-	
+
 	@Autowired
 	private CategoriaRepository categoriaRepository;
 
@@ -166,5 +166,5 @@ public class DBService {
 
 		itemPedidoRepository.saveAll(Arrays.asList(ip1, ip2, ip3));
 	}
-	
+
 }
