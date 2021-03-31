@@ -11,7 +11,6 @@ import org.springframework.security.core.userdetails.UserDetails;
 import com.gustavoweb.cursomc.domain.enums.Perfil;
 
 public class UserSS implements UserDetails {
-
 	private static final long serialVersionUID = 1L;
 
 	private Integer id;
@@ -70,4 +69,7 @@ public class UserSS implements UserDetails {
 		return true;
 	}
 
+	public boolean hasRole(Perfil perfil) {
+		return getAuthorities().contains(new SimpleGrantedAuthority(perfil.getDescricao()));
+	}
 }

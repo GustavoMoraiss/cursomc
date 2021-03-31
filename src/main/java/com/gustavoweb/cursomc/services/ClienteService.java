@@ -10,15 +10,19 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort.Direction;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.gustavoweb.cursomc.domain.Cidade;
 import com.gustavoweb.cursomc.domain.Cliente;
 import com.gustavoweb.cursomc.domain.Endereco;
+import com.gustavoweb.cursomc.domain.enums.Perfil;
 import com.gustavoweb.cursomc.domain.enums.TipoCliente;
 import com.gustavoweb.cursomc.dto.ClienteDTO;
 import com.gustavoweb.cursomc.dto.ClienteNewDTO;
 import com.gustavoweb.cursomc.repositories.ClienteRepository;
 import com.gustavoweb.cursomc.repositories.EnderecoRepository;
+import com.gustavoweb.cursomc.security.UserSS;
+import com.gustavoweb.cursomc.services.exceptions.AuthorizationException;
 import com.gustavoweb.cursomc.services.exceptions.DataIntegrityException;
 import com.gustavoweb.cursomc.services.exceptions.ObjectNotFoundException;
 
@@ -26,20 +30,27 @@ import com.gustavoweb.cursomc.services.exceptions.ObjectNotFoundException;
 public class ClienteService {
 
 	@Autowired
-	private BCryptPasswordEncoder pe;
-
-	@Autowired
 	private ClienteRepository repo;
 
 	@Autowired
 	private EnderecoRepository enderecoRepository;
 
+	@Autowired
+	private BCryptPasswordEncoder pe;
+
 	public Cliente find(Integer id) {
+
+		UserSS user = UserService.authenticated();
+		if (user == null || !user.hasRole(Perfil.ADMIN) && !id.equals(user.getId())) {
+			throw new AuthorizationException("Acesso negado");
+		}
+
 		Optional<Cliente> obj = repo.findById(id);
 		return obj.orElseThrow(() -> new ObjectNotFoundException(
 				"Objeto não encontrado! Id: " + id + ", Tipo: " + Cliente.class.getName()));
 	}
 
+	@Transactional
 	public Cliente insert(Cliente obj) {
 		obj.setId(null);
 		obj = repo.save(obj);
@@ -49,7 +60,7 @@ public class ClienteService {
 
 	public Cliente update(Cliente obj) {
 		Cliente newObj = find(obj.getId());
-		updateDataBase(newObj, obj);
+		updateData(newObj, obj);
 		return repo.save(newObj);
 	}
 
@@ -58,7 +69,7 @@ public class ClienteService {
 		try {
 			repo.deleteById(id);
 		} catch (DataIntegrityViolationException e) {
-			throw new DataIntegrityException("Não é possível excluir porque há pedidos relacionadas.");
+			throw new DataIntegrityException("Não é possível excluir porque há pedidos relacionados");
 		}
 	}
 
@@ -71,16 +82,11 @@ public class ClienteService {
 		return repo.findAll(pageRequest);
 	}
 
-	public Cliente fromDto(ClienteDTO objDto) {
+	public Cliente fromDTO(ClienteDTO objDto) {
 		return new Cliente(objDto.getId(), objDto.getNome(), objDto.getEmail(), null, null, null);
 	}
 
-	private void updateDataBase(Cliente newObj, Cliente obj) {
-		newObj.setNome(obj.getNome());
-		newObj.setEmail(obj.getEmail());
-	}
-
-	public Cliente fromDto(ClienteNewDTO objDto) {
+	public Cliente fromDTO(ClienteNewDTO objDto) {
 		Cliente cli = new Cliente(null, objDto.getNome(), objDto.getEmail(), objDto.getCpfOuCnpj(),
 				TipoCliente.toEnum(objDto.getTipo()), pe.encode(objDto.getSenha()));
 		Cidade cid = new Cidade(objDto.getCidadeId(), null, null);
@@ -91,7 +97,14 @@ public class ClienteService {
 		if (objDto.getTelefone2() != null) {
 			cli.getTelefones().add(objDto.getTelefone2());
 		}
+		if (objDto.getTelefone3() != null) {
+			cli.getTelefones().add(objDto.getTelefone3());
+		}
 		return cli;
 	}
 
+	private void updateData(Cliente newObj, Cliente obj) {
+		newObj.setNome(obj.getNome());
+		newObj.setEmail(obj.getEmail());
+	}
 }
